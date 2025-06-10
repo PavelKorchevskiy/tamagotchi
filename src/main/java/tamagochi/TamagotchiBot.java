@@ -161,7 +161,7 @@ public class TamagotchiBot extends TelegramLongPollingBot {
 
   @Override
   public String getBotToken() {
-    return "7532318568:AAGiAeM1_2zs40x86WvGppJuxC-wFCUEgRY";
+    return botToken;
   }
 
   public void register() {
@@ -176,6 +176,6 @@ public class TamagotchiBot extends TelegramLongPollingBot {
   @Value("bot.name")
   private String botUsername;
 
-  @Value("bot.token")
+  @Value("${bot.token}")
   private String botToken;
 }
