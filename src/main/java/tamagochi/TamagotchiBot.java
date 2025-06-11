@@ -1,6 +1,8 @@
 package tamagochi;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -112,13 +114,30 @@ public class TamagotchiBot extends TelegramLongPollingBot {
   private void sendPhoto(long chatId, String path, String message) {
     SendPhoto photoMessage = new SendPhoto();
     photoMessage.setChatId(String.valueOf(chatId));
-    photoMessage.setPhoto(new InputFile(new File(path)));
+    photoMessage.setPhoto(createPhotoFromResource(path));
     photoMessage.setCaption(message);
     try {
       execute(photoMessage);
     } catch (TelegramApiException e) {
       e.printStackTrace();
     }
+  }
+
+  private InputFile createPhotoFromResource(String resourcePathWithFilename) {
+    // Извлекаем имя файла из пути
+    String filename = Paths.get(resourcePathWithFilename).getFileName().toString();
+
+    // Загружаем как InputStream
+    InputStream is = getClass().getResourceAsStream(resourcePathWithFilename);
+    if (is == null) {
+      throw new RuntimeException("Ресурс не найден: " + resourcePathWithFilename);
+    }
+
+    // Создаём InputFile
+    InputFile inputFile = new InputFile();
+    inputFile.setMedia(is, filename);
+
+    return inputFile;
   }
 
   private ReplyKeyboardMarkup createKeyboard() {

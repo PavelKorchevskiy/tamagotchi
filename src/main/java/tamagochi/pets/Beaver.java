@@ -4,9 +4,9 @@ import tamagochi.model.Reaction;
 
 public class Beaver extends Tamagotchi {
 
-  private static final String PATH = "src/main/resources/photo/beaver_";
-  private static final String PATH_EATS = "src/main/resources/photo/beaver_eats_";
-  private static final String PATH_DEATH = "src/main/resources/photo/beaver_death.jpg";
+  private static final String PATH = "/photo/beaver_";
+  private static final String PATH_EATS = "/photo/beaver_eats_";
+  private static final String PATH_DEATH = "/photo/beaver_death.jpg";
 
   @Override
   public Reaction feed() {

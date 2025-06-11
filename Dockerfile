@@ -1,5 +1,5 @@
 
-FROM maven:3.8.6-jdk-17 AS build
+FROM maven:3.8.3-openjdk-17 AS build
 WORKDIR /build
 
 # Копируем исходники
