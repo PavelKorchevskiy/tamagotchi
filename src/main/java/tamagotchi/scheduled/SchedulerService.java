@@ -10,7 +10,7 @@ public class SchedulerService {
 
 private TamagotchiBot bot;
 
-    @Scheduled(cron = "0 12 * * *")
+    @Scheduled(cron = "0 0 12 * * *", zone = "Europe/Minsk")
 //    @Scheduled(fixedRate = 5000)
     public void abandonTamagotchis() {
         bot.abandon();
