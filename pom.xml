@@ -63,7 +63,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <executable>true</executable>
-                    <mainClass>tamagochi.App</mainClass>
+                    <mainClass>tamagotchi.App</mainClass>
                 </configuration>
                 <executions>
                     <execution>

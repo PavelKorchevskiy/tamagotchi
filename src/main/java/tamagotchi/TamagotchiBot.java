@@ -1,12 +1,11 @@
-package tamagochi;
+package tamagotchi;
 
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -14,21 +13,22 @@ import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-import tamagochi.model.Reaction;
-import tamagochi.pets.Beaver;
-import tamagochi.pets.Tamagotchi;
+import tamagotchi.model.SendMessageDto;
+import tamagotchi.model.SendPhotoDto;
+import tamagotchi.service.KeyboardType;
+import tamagotchi.service.TamagotchiService;
 
 @Component
 public class TamagotchiBot extends TelegramLongPollingBot {
 
-  private final Map<Long, Tamagotchi> tamagotchis = new HashMap<>();
+  private TamagotchiService service;
+
+  private final static String UNKNOWN_COMMAND = "Неизвестная команда. Используйте /start для начала.";
 
   @Override
   public void onUpdateReceived(Update update) {
@@ -38,71 +38,33 @@ public class TamagotchiBot extends TelegramLongPollingBot {
 
       switch (messageText) {
         case "/start":
-          start(chatId);
+          sendMessage(service.createNewTamagotchi(chatId));
           break;
         case "/feed":
-          feed(chatId);
+          sendPhoto(service.feed(chatId));
           break;
         case "/play":
-          play(chatId);
+          sendPhoto(service.play(chatId));
           break;
         case "/punish":
-          punish(chatId);
+          sendPhoto(service.punish(chatId));
           break;
         default:
-          sendMessage(chatId, "Неизвестная команда. Используйте /start для начала.");
+          sendMessage(new SendMessageDto(chatId, UNKNOWN_COMMAND, KeyboardType.START));
       }
     }
   }
 
-  private void start(long chatId) {
-    tamagotchis.put(chatId, new Beaver());
-    sendMessage(chatId, "Ваш тамагочи создан! Ухаживайте за ним.\nИспользуйте команды /feed, /play и /punish.", createKeyboard());
+  public void abandon() {
+    List<SendPhotoDto> deadTamagotchiResponse = service.abandon();
+    deadTamagotchiResponse.forEach(this::sendPhoto);
   }
 
-  private void feed(long chatId) {
-    Tamagotchi tamagotchi = tamagotchis.get(chatId);
-    if (tamagotchi != null) {
-      Reaction reaction = tamagotchi.feed();
-      sendPhoto(chatId, reaction.path(), reaction.message());
-    } else {
-      sendMessage(chatId, "Сначала создайте тамагочи с помощью /start.");
-    }
-  }
-
-  private void play(long chatId) {
-    Tamagotchi tamagotchi = tamagotchis.get(chatId);
-    if (tamagotchi != null) {
-      Reaction reaction = tamagotchi.play();
-      sendPhoto(chatId, reaction.path(), reaction.message());
-    } else {
-      sendMessage(chatId, "Сначала создайте тамагочи с помощью /start.");
-    }
-  }
-
-  private void punish(long chatId) {
-    Tamagotchi tamagotchi = tamagotchis.get(chatId);
-    if (tamagotchi != null) {
-      Reaction reaction = tamagotchi.punish();
-      sendPhoto(chatId, reaction.path(), reaction.message());
-      if (!tamagotchi.isAlive()) {
-        tamagotchis.remove(chatId);
-        sendMessage(chatId, "Может следующему тамогочи повезет больше", createAfterDeathKeyboard());
-      }
-    } else {
-      sendMessage(chatId, "Сначала создайте тамагочи с помощью /start.");
-    }
-  }
-
-  private void sendMessage(long chatId, String text) {
-    sendMessage(chatId, text, null);
-  }
-
-  private void sendMessage(long chatId, String text, ReplyKeyboardMarkup keyboard) {
+  private void sendMessage(SendMessageDto sendMessageDto) {
     SendMessage message = new SendMessage();
-    message.setChatId(String.valueOf(chatId));
-    message.setText(text);
-    message.setReplyMarkup(keyboard);
+    message.setChatId(String.valueOf(sendMessageDto.chatId()));
+    message.setText(sendMessageDto.message());
+    message.setReplyMarkup(createKeyboard(sendMessageDto.keyboardType()));
     try {
       execute(message);
     } catch (TelegramApiException e) {
@@ -110,12 +72,13 @@ public class TamagotchiBot extends TelegramLongPollingBot {
     }
   }
 
-
-  private void sendPhoto(long chatId, String path, String message) {
+  private void sendPhoto(SendPhotoDto sendPhotoDto) {
     SendPhoto photoMessage = new SendPhoto();
-    photoMessage.setChatId(String.valueOf(chatId));
-    photoMessage.setPhoto(createPhotoFromResource(path));
-    photoMessage.setCaption(message);
+    photoMessage.setChatId(String.valueOf(sendPhotoDto.chatId()));
+    photoMessage.setPhoto(createPhotoFromResource(sendPhotoDto.photoPath()));
+    photoMessage.setCaption(sendPhotoDto.message());
+    photoMessage.setReplyMarkup(createKeyboard(sendPhotoDto.keyboardType()));
+
     try {
       execute(photoMessage);
     } catch (TelegramApiException e) {
@@ -140,7 +103,21 @@ public class TamagotchiBot extends TelegramLongPollingBot {
     return inputFile;
   }
 
-  private ReplyKeyboardMarkup createKeyboard() {
+  private ReplyKeyboardMarkup createKeyboard(KeyboardType type) {
+    return switch (type) {
+      case OPTIONS -> {
+        yield createOptionsKeyboard();
+      }
+      case START -> {
+        yield createStartKeyboard();
+      }
+      default -> {
+        yield null;
+      }
+    };
+  }
+
+  private ReplyKeyboardMarkup createOptionsKeyboard() {
     ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
     keyboardMarkup.setSelective(true);
     keyboardMarkup.setResizeKeyboard(true);
@@ -158,11 +135,12 @@ public class TamagotchiBot extends TelegramLongPollingBot {
     return keyboardMarkup;
   }
 
-  private ReplyKeyboardMarkup createAfterDeathKeyboard() {
+  private ReplyKeyboardMarkup createStartKeyboard() {
     ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
     keyboardMarkup.setSelective(true);
     keyboardMarkup.setResizeKeyboard(true);
     keyboardMarkup.setOneTimeKeyboard(true);
+
 
     KeyboardRow row1 = new KeyboardRow();
     row1.add("/start");
@@ -197,4 +175,9 @@ public class TamagotchiBot extends TelegramLongPollingBot {
 
   @Value("${bot.token}")
   private String botToken;
+
+  @Autowired
+  public void setService(TamagotchiService service) {
+    this.service = service;
+  }
 }

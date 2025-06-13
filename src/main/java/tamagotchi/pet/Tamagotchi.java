@@ -1,6 +1,6 @@
-package tamagochi.pets;
+package tamagotchi.pet;
 
-import tamagochi.model.Reaction;
+import tamagotchi.model.Reaction;
 
 public class Tamagotchi {
 
@@ -17,6 +17,11 @@ public class Tamagotchi {
   }
 
   public Reaction punish() {
+    happiness = Math.max(happiness - 1, 0);
+    return null;
+  }
+
+  public Reaction abandon() {
     happiness = Math.max(happiness - 1, 0);
     return null;
   }
