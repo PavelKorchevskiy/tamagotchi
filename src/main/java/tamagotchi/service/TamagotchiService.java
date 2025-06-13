@@ -58,6 +58,6 @@ public class TamagotchiService {
     }
 
     private Tamagotchi getTamagotchi(long chatId) {
-        return Optional.of(tamagotchis.get(chatId)).orElseThrow(TamagothiNotFoundException::new);
+        return Optional.ofNullable(tamagotchis.get(chatId)).orElseThrow(TamagothiNotFoundException::new);
     }
 }
