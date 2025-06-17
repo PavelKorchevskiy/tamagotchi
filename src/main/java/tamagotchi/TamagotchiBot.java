@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,36 +22,39 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import tamagotchi.model.SendMessageDto;
 import tamagotchi.model.SendPhotoDto;
 import tamagotchi.service.KeyboardType;
+import tamagotchi.service.MessageService;
 import tamagotchi.service.TamagotchiService;
 
 @Component
 public class TamagotchiBot extends TelegramLongPollingBot {
 
   private TamagotchiService service;
+  private MessageService messageService;
 
-  private final static String UNKNOWN_COMMAND = "Неизвестная команда. Используйте /start для начала.";
+  private final static String UNKNOWN_COMMAND = "unknown.command";
 
   @Override
   public void onUpdateReceived(Update update) {
     if (update.hasMessage() && update.getMessage().hasText()) {
       String messageText = update.getMessage().getText();
       long chatId = update.getMessage().getChatId();
+      Locale locale = getUserLocale(update);
 
       switch (messageText) {
         case "/start":
-          sendMessage(service.createNewTamagotchi(chatId));
+          sendMessage(service.createNewTamagotchi(chatId), locale);
           break;
         case "/feed":
-          sendPhoto(service.feed(chatId));
+          sendPhoto(service.feed(chatId), locale);
           break;
         case "/play":
-          sendPhoto(service.play(chatId));
+          sendPhoto(service.play(chatId), locale);
           break;
         case "/punish":
-          sendPhoto(service.punish(chatId));
+          sendPhoto(service.punish(chatId), locale);
           break;
         default:
-          sendMessage(new SendMessageDto(chatId, UNKNOWN_COMMAND, KeyboardType.START));
+          sendMessage(new SendMessageDto(chatId, UNKNOWN_COMMAND, KeyboardType.START), locale);
       }
     }
   }
@@ -61,9 +65,13 @@ public class TamagotchiBot extends TelegramLongPollingBot {
   }
 
   private void sendMessage(SendMessageDto sendMessageDto) {
+    sendMessage(sendMessageDto, Locale.getDefault());
+  }
+
+  private void sendMessage(SendMessageDto sendMessageDto, Locale locale) {
     SendMessage message = new SendMessage();
     message.setChatId(String.valueOf(sendMessageDto.chatId()));
-    message.setText(sendMessageDto.message());
+    message.setText(messageService.get(sendMessageDto.message(), locale));
     message.setReplyMarkup(createKeyboard(sendMessageDto.keyboardType()));
     try {
       execute(message);
@@ -73,10 +81,14 @@ public class TamagotchiBot extends TelegramLongPollingBot {
   }
 
   private void sendPhoto(SendPhotoDto sendPhotoDto) {
+    sendPhoto(sendPhotoDto, Locale.getDefault());
+  }
+
+  private void sendPhoto(SendPhotoDto sendPhotoDto, Locale locale) {
     SendPhoto photoMessage = new SendPhoto();
     photoMessage.setChatId(String.valueOf(sendPhotoDto.chatId()));
     photoMessage.setPhoto(createPhotoFromResource(sendPhotoDto.photoPath()));
-    photoMessage.setCaption(sendPhotoDto.message());
+    photoMessage.setCaption(messageService.get(sendPhotoDto.message(), locale));
     photoMessage.setReplyMarkup(createKeyboard(sendPhotoDto.keyboardType()));
 
     try {
@@ -149,6 +161,16 @@ public class TamagotchiBot extends TelegramLongPollingBot {
     keyboardMarkup.setKeyboard(keyboard);
 
     return keyboardMarkup;
+  }
+
+  private Locale getUserLocale(Update update) {
+    if (update.hasMessage() && update.getMessage().getFrom() != null) {
+      String langCode = update.getMessage().getFrom().getLanguageCode();
+      if (langCode != null && !langCode.isEmpty()) {
+        return new Locale(langCode);
+      }
+    }
+    return Locale.getDefault();
   }
 
   @Override

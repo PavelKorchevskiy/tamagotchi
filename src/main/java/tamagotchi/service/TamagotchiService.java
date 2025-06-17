@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class TamagotchiService {
 
-    private final String START_MESSAGE = "Ваш тамагочи создан! Ухаживайте за ним.\nИспользуйте команды /feed, /play и /punish.";
+    private final String START_MESSAGE = "tamagotchi.created";
 
     private final Map<Long, Tamagotchi> tamagotchis = new ConcurrentHashMap<>();
 
