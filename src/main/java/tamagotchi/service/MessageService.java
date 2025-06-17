@@ -3,6 +3,12 @@ package tamagotchi.service;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,21 +22,30 @@ public class MessageService {
     @PostConstruct
     public void loadMessages() {
         try {
-            String baseDir = "src/main/resources/locales/";
-            List<Path> files = Files.list(Paths.get(baseDir))
-                    .filter(path -> path.toString().endsWith(".properties"))
-                    .toList();
+            URL resourceUrl = getClass().getClassLoader().getResource("locales");
+            if (resourceUrl == null) {
+                throw new RuntimeException("Папка locales не найдена в classpath");
+            }
 
-            for (Path file : files) {
-                String filename = file.getFileName().toString();
+            Path dir = Paths.get(resourceUrl.toURI());
+
+            Files.list(dir).forEach(path -> {
+                String filename = path.getFileName().toString();
+                if (!filename.endsWith(".properties")) return;
+
                 String langCode = filename.replace("messages_", "").replace(".properties", "");
 
                 Properties props = new Properties();
-                props.load(Files.newInputStream(file));
+                try (InputStream is = Files.newInputStream(path);
+                     Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+                    props.load(reader);
+                } catch (IOException e) {
+                    throw new RuntimeException("Ошибка чтения файла: " + filename, e);
+                }
 
                 Locale locale = new Locale(langCode);
                 messages.put(locale, props);
-            }
+            });
         } catch (Exception e) {
             throw new RuntimeException("Ошибка загрузки локализационных файлов", e);
         }

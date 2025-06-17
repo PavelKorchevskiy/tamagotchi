@@ -202,4 +202,9 @@ public class TamagotchiBot extends TelegramLongPollingBot {
   public void setService(TamagotchiService service) {
     this.service = service;
   }
+
+  @Autowired
+  public void setMessageService(MessageService messageService) {
+    this.messageService = messageService;
+  }
 }
