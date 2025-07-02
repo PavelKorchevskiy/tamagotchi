@@ -6,9 +6,9 @@ import static tamagotchi.util.Utils.pathWithHappiness;
 
 public class Beaver extends Tamagotchi {
 
-  private static final String PATH = "/photo/beaver_";
-  private static final String PATH_EATS = "/photo/beaver_eats_";
-  private static final String PATH_DEATH = "/photo/beaver_death.jpg";
+  private static final String PATH = "/photo/beaver/beaver_";
+  private static final String PATH_EATS = "/photo/beaver/beaver_eats_";
+  private static final String PATH_DEATH = "/photo/beaver/beaver_death.jpg";
 
   private static final String FED = "beaver.fed";
   private static final String PLAYED = "beaver.played";
