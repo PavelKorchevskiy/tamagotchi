@@ -4,5 +4,6 @@ public enum KeyboardType {
 
     START,
     OPTIONS,
+    CREATE_OPTIONS,
     NON
 }

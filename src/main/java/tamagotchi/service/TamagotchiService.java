@@ -1,5 +1,6 @@
 package tamagotchi.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tamagotchi.exception.TamagothiNotFoundException;
 import tamagotchi.model.Reaction;
@@ -8,21 +9,30 @@ import tamagotchi.model.SendPhotoDto;
 import tamagotchi.pet.Beaver;
 import tamagotchi.pet.Tamagotchi;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TamagotchiService {
 
     private final String START_MESSAGE = "tamagotchi.created";
+    private final String CHOOSE_PET_MESSAGE = "tamagotchi.choose";
 
     private final Map<Long, Tamagotchi> tamagotchis = new ConcurrentHashMap<>();
+    private final TamagotchiFactory tamagotchiFactory;
 
-    public SendMessageDto createNewTamagotchi(long chatId) {
-        tamagotchis.put(chatId, new Beaver());
+
+    public List<String> getAvailableTypes() {
+        return tamagotchiFactory.getAvailableTypes();
+    }
+
+    public SendMessageDto chooseTamagotchi(long chatId) {
+        return new SendMessageDto(chatId, CHOOSE_PET_MESSAGE, KeyboardType.CREATE_OPTIONS);
+    }
+
+    public SendMessageDto createTamagotchi(long chatId, String type) {
+        Tamagotchi tama = tamagotchiFactory.create(type);
+        tamagotchis.put(chatId, tama);
         return new SendMessageDto(chatId, START_MESSAGE, KeyboardType.OPTIONS);
     }
 
@@ -59,5 +69,10 @@ public class TamagotchiService {
 
     private Tamagotchi getTamagotchi(long chatId) {
         return Optional.ofNullable(tamagotchis.get(chatId)).orElseThrow(TamagothiNotFoundException::new);
+    }
+
+    @Autowired
+    public TamagotchiService(TamagotchiFactory tamagotchiFactory) {
+        this.tamagotchiFactory = tamagotchiFactory;
     }
 }

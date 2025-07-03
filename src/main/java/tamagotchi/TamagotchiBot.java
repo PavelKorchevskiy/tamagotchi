@@ -39,22 +39,29 @@ public class TamagotchiBot extends TelegramLongPollingBot {
       String messageText = update.getMessage().getText();
       long chatId = update.getMessage().getChatId();
       Locale locale = getUserLocale(update);
-
-      switch (messageText) {
-        case "/start":
-          sendMessage(service.createNewTamagotchi(chatId), locale);
-          break;
-        case "/feed":
-          sendPhoto(service.feed(chatId), locale);
-          break;
-        case "/play":
-          sendPhoto(service.play(chatId), locale);
-          break;
-        case "/punish":
-          sendPhoto(service.punish(chatId), locale);
-          break;
-        default:
-          sendMessage(new SendMessageDto(chatId, UNKNOWN_COMMAND, KeyboardType.START), locale);
+      try {
+        switch (messageText) {
+          case "/start":
+            sendMessage(service.chooseTamagotchi(chatId), locale);
+            break;
+          case "Beaver":
+          case "Pixel Beaver":
+            sendMessage(service.createTamagotchi(chatId, messageText));
+            break;
+          case "/feed":
+            sendPhoto(service.feed(chatId), locale);
+            break;
+          case "/play":
+            sendPhoto(service.play(chatId), locale);
+            break;
+          case "/punish":
+            sendPhoto(service.punish(chatId), locale);
+            break;
+          default:
+            sendMessage(new SendMessageDto(chatId, UNKNOWN_COMMAND, KeyboardType.START), locale);
+        }
+      } catch (Exception e) {
+        sendMessage(service.chooseTamagotchi(chatId), locale);
       }
     }
   }
@@ -123,6 +130,9 @@ public class TamagotchiBot extends TelegramLongPollingBot {
       case START -> {
         yield createStartKeyboard();
       }
+      case CREATE_OPTIONS -> {
+        yield createCreationKeyboard();
+      }
       default -> {
         yield null;
       }
@@ -156,6 +166,22 @@ public class TamagotchiBot extends TelegramLongPollingBot {
 
     KeyboardRow row1 = new KeyboardRow();
     row1.add("/start");
+    List<KeyboardRow> keyboard = new ArrayList<>();
+    keyboard.add(row1);
+    keyboardMarkup.setKeyboard(keyboard);
+
+    return keyboardMarkup;
+  }
+
+  private ReplyKeyboardMarkup createCreationKeyboard() {
+    ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+    keyboardMarkup.setSelective(true);
+    keyboardMarkup.setResizeKeyboard(true);
+    keyboardMarkup.setOneTimeKeyboard(true);
+
+
+    KeyboardRow row1 = new KeyboardRow();
+    row1.addAll(service.getAvailableTypes());
     List<KeyboardRow> keyboard = new ArrayList<>();
     keyboard.add(row1);
     keyboardMarkup.setKeyboard(keyboard);

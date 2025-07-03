@@ -10,11 +10,11 @@ public class Beaver extends Tamagotchi {
   private static final String PATH_EATS = "/photo/beaver/beaver_eats_";
   private static final String PATH_DEATH = "/photo/beaver/beaver_death.jpg";
 
-  private static final String FED = "beaver.fed";
-  private static final String PLAYED = "beaver.played";
-  private static final String PUNISHED = "beaver.punished";
-  private static final String DEAD_PUNISHED = "beaver.dead.punished";
-  private static final String DEAD_ABANDONED = "beaver.dead.abandoned";
+  protected static final String FED = "beaver.fed";
+  protected static final String PLAYED = "beaver.played";
+  protected static final String PUNISHED = "beaver.punished";
+  protected static final String DEAD_PUNISHED = "beaver.dead.punished";
+  protected static final String DEAD_ABANDONED = "beaver.dead.abandoned";
 
   @Override
   public Reaction feed() {
