@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import tamagotchi.pet.Beaver;
 import tamagotchi.pet.PixelBeaver;
 import tamagotchi.pet.Tamagotchi;
+import tamagotchi.pet.Snake;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ public class TamagotchiFactory {
     public TamagotchiFactory() {
         factories.put("Beaver", Beaver::new);
         factories.put("Pixel Beaver", PixelBeaver::new);
+        factories.put("Snake", Snake::new);
     }
 
     public List<String> getAvailableTypes() {

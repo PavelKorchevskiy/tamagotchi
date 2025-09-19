@@ -46,6 +46,7 @@ public class TamagotchiBot extends TelegramLongPollingBot {
             break;
           case "Beaver":
           case "Pixel Beaver":
+          case "Snake":
             sendMessage(service.createTamagotchi(chatId, messageText));
             break;
           case "/feed":
